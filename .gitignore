@@ -16,3 +16,10 @@ build/
 
 htmlcov/
 .coverage
+
+datasets/
+checkpoints/
+models/
+mlruns/
+*.pt
+*.pth
