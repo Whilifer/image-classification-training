@@ -18,8 +18,9 @@ htmlcov/
 .coverage
 
 datasets/
+/data/
 checkpoints/
-models/
+
 mlruns/
 *.pt
 *.pth
