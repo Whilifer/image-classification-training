@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from torch.utils.data import DataLoader
+import torch
+from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms
 
 CLASSES = (
@@ -40,6 +41,13 @@ def create_dataloaders(
         download=True,
         transform=transform,
     )
+    generator = torch.Generator().manual_seed(42)
+
+    train_dataset, validation_dataset = random_split(
+        train_dataset,
+        [45_000, 5_000],
+        generator=generator,
+    )
 
     test_dataset = datasets.CIFAR10(
         root=data_dir,
@@ -56,6 +64,14 @@ def create_dataloaders(
         pin_memory=True,
     )
 
+    validation_loader = DataLoader(
+        validation_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+    )
+
     test_loader = DataLoader(
         test_dataset,
         batch_size=batch_size,
@@ -64,4 +80,4 @@ def create_dataloaders(
         pin_memory=True,
     )
 
-    return train_loader, test_loader
+    return train_loader, validation_loader, test_loader
