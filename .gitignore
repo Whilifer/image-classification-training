@@ -24,3 +24,5 @@ checkpoints/
 mlruns/
 *.pt
 *.pth
+
+artifacts/

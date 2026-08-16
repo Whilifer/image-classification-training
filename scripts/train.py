@@ -4,6 +4,7 @@ from torch.optim import Adam
 
 from src.data.dataset import create_dataloaders
 from src.models.classifier import CIFARClassifier
+from src.training.checkpoint import save_checkpoint
 from src.training.evaluate import evaluate
 from src.training.train import train_one_epoch
 
@@ -13,7 +14,7 @@ def main():
 
     print(f"Device: {device}")
 
-    train_loader, test_loader = create_dataloaders(
+    train_loader, validation_loader, test_loader = create_dataloaders(
         data_dir="data",
         batch_size=128,
         num_workers=0,
@@ -30,6 +31,8 @@ def main():
 
     epochs = 10
 
+    best_validation_accuracy = 0.0
+
     for epoch in range(epochs):
         train_loss = train_one_epoch(
             model=model,
@@ -39,9 +42,9 @@ def main():
             device=device,
         )
 
-        test_loss, accuracy = evaluate(
+        validation_loss, validation_accuracy = evaluate(
             model=model,
-            dataloader=test_loader,
+            dataloader=validation_loader,
             criterion=criterion,
             device=device,
         )
@@ -49,9 +52,19 @@ def main():
         print(
             f"Epoch {epoch + 1}/{epochs} | "
             f"Train loss: {train_loss:.4f} | "
-            f"Test loss: {test_loss:.4f} | "
-            f"Accuracy: {accuracy:.4f}"
+            f"Validation loss: {validation_loss:.4f} | "
+            f"Validation accuracy: {validation_accuracy:.4f}"
         )
+
+        if validation_accuracy > best_validation_accuracy:
+            best_validation_accuracy = validation_accuracy
+
+            save_checkpoint(
+                model=model,
+                path="artifacts/best_model.pt",
+            )
+
+            print("New best model saved")
 
 
 if __name__ == "__main__":
