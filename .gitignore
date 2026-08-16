@@ -26,3 +26,5 @@ mlruns/
 *.pth
 
 artifacts/
+
+*.db
