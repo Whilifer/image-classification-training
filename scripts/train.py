@@ -36,10 +36,11 @@ def main():
     )
 
     best_validation_accuracy = 0.0
+    best_epoch = 0
 
     mlflow.set_experiment("CIFAR10-classification")
 
-    with mlflow.start_run():
+    with mlflow.start_run(run_name="baseline"):
         mlflow.log_params(
             {
                 "batch_size": config.batch_size,
@@ -52,6 +53,14 @@ def main():
                 "model": "CIFARClassifier",
             }
         )
+
+        mlflow.set_tags(
+            {
+                "project": "cifar10-classification",
+                "dataset": "CIFAR10",
+            }
+        )
+
         for epoch in range(config.epochs):
             train_loss = train_one_epoch(
                 model=model,
@@ -86,6 +95,7 @@ def main():
 
             if validation_accuracy > best_validation_accuracy:
                 best_validation_accuracy = validation_accuracy
+                best_epoch = epoch + 1
 
                 save_checkpoint(
                     model=model,
@@ -116,7 +126,20 @@ def main():
             }
         )
 
+        mlflow.log_metric(
+            "best_validation_accuracy",
+            best_validation_accuracy,
+        )
+
+        mlflow.log_metric(
+            "best_epoch",
+            best_epoch,
+        )
+
         mlflow.log_artifact("artifacts/best_model.pt")
+        mlflow.log_artifact(
+            "configs/train.yaml",
+        )
 
         print(f"Final test | Loss: {test_loss:.4f} | Accuracy: {test_accuracy:.4f}")
 
