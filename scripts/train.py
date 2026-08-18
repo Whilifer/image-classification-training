@@ -1,5 +1,7 @@
 import mlflow
-from torch import nn
+import mlflow.pytorch
+from mlflow.models import infer_signature
+from torch import inference_mode, nn, testing
 from torch.optim import Adam
 
 from src.config import TrainConfig
@@ -111,6 +113,46 @@ def main():
             path=best_model_path,
             device=device,
         )
+
+        example_images, _ = next(iter(test_loader))
+        example_images = example_images.to(device)
+
+        model_cpu = model.to("cpu")
+        example_images_cpu = example_images.cpu()
+
+        with inference_mode():
+            example_outputs_cpu = model_cpu(example_images_cpu)
+
+        signature = infer_signature(
+            example_images_cpu.numpy(), example_outputs_cpu.numpy()
+        )
+
+        mlflow.pytorch.log_model(
+            model_cpu,
+            name="model",
+            signature=signature,
+            serialization_format="pt2",
+            input_example=example_images_cpu.numpy(),
+        )
+
+        model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
+
+        print("Model URI:", model_uri)
+
+        loaded_model = mlflow.pytorch.load_model(model_uri)
+        # loaded_model.eval()
+
+        with inference_mode():
+            loaded_output = loaded_model(example_images_cpu)
+
+        testing.assert_close(
+            example_outputs_cpu,
+            loaded_output,
+        )
+
+        print("MLflow model successfully loaded and verified")
+
+        model.to(device)
 
         test_loss, test_accuracy = evaluate(
             model=model,
