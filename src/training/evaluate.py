@@ -47,3 +47,34 @@ def evaluate(
     accuracy = correct / total_samples
 
     return average_loss, accuracy
+
+
+def evaluate_exported_model(
+    model,
+    dataloader: DataLoader,
+    criterion: nn.Module,
+    device: torch.device,
+) -> tuple[float, float]:
+    total_loss = 0.0
+    correct = 0
+    total_samples = 0
+
+    for images, labels in dataloader:
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
+
+        with torch.inference_mode():
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+
+        batch_size = images.size(0)
+
+        total_loss += loss.item() * batch_size
+        correct += (outputs.argmax(dim=1) == labels).sum().item()
+
+        total_samples += batch_size
+
+    return (
+        total_loss / total_samples,
+        correct / total_samples,
+    )
