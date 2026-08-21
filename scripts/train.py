@@ -133,6 +133,7 @@ def main():
             signature=signature,
             serialization_format="pt2",
             input_example=example_images_cpu.numpy(),
+            registered_model_name="CIFARClassifier",
         )
 
         model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
