@@ -1,7 +1,9 @@
+import mlflow
 from mlflow.tracking import MlflowClient
 
 EXPERIMENT_NAME = "CIFAR10-classification"
 METRIC_NAME = "best_validation_accuracy"
+MODEL_NAME = "CIFARClassifier"
 
 
 def main():
@@ -24,12 +26,23 @@ def main():
 
     best_run = runs[0]
 
+    run_id = best_run.info.run_id
+    accuracy = best_run.data.metrics[METRIC_NAME]
+
     print("Best run:")
-    print("Run ID:", best_run.info.run_id)
-    print(
-        "Validation accuracy:",
-        best_run.data.metrics[METRIC_NAME],
+    print("Run ID:", run_id)
+    print("Validation accuracy:", accuracy)
+
+    model_uri = f"runs:/{run_id}/model"
+
+    print("Model URI:", model_uri)
+
+    result = mlflow.register_model(
+        model_uri=model_uri,
+        name=MODEL_NAME,
     )
+
+    print(f"Registered model: {result.name} version {result.version}")
 
 
 if __name__ == "__main__":
