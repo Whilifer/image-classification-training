@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.routers.health import router as health_router
+from app.routers.predict import router as predict_router
 from src.inference.config import load_config, resolve_device
 from src.inference.model import ModelLoader
 
@@ -33,3 +34,4 @@ app = FastAPI(
 )
 
 app.include_router(health_router)
+app.include_router(predict_router)
