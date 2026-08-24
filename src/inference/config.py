@@ -9,6 +9,7 @@ class InferenceConfig(BaseModel):
     model_name: str
     model_version: int
     device: str
+    mlflow_tracking_uri: str
 
 
 def load_config(

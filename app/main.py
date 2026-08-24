@@ -18,6 +18,7 @@ async def lifespan(app: FastAPI):
         model_name=config.model_name,
         model_version=config.model_version,
         device=device,
+        mlflow_tracking_uri=config.mlflow_tracking_uri,
     )
 
     model_loader.load()
