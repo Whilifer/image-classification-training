@@ -11,6 +11,7 @@ from src.inference.model import ModelLoader
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     config = load_config("configs/inference.yaml")
+
     device = resolve_device(config.device)
 
     model_loader = ModelLoader(
@@ -30,6 +31,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="CIFAR-10 Classifier",
+    version="1.0.0",
     lifespan=lifespan,
 )
 

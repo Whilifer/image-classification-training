@@ -3,10 +3,12 @@ from io import BytesIO
 import torch
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from PIL import Image, UnidentifiedImageError
-from torchvision import transforms
 
 from app.dependencies import get_model_loader
+from app.schemas import PredictionResponse
+from src.data.dataset import CLASSES
 from src.inference.model import ModelLoader
+from src.inference.preprocessing import preprocess
 
 router = APIRouter(
     prefix="/predict",
@@ -14,12 +16,15 @@ router = APIRouter(
 )
 
 
-@router.post("/")
+@router.post(
+    "/",
+    response_model=PredictionResponse,
+)
 async def predict(
     file: UploadFile = File(...),
     model_loader: ModelLoader = Depends(get_model_loader),
 ):
-    if not file.content_type.startswith("image/"):
+    if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=400,
             detail="File must be an image",
@@ -52,26 +57,13 @@ async def predict(
 
     confidence, index = probabilities[0].max(dim=0)
 
-    return {
-        "class_id": index.item(),
-        "confidence": round(
+    class_id = index.item()
+
+    return PredictionResponse(
+        class_id=class_id,
+        class_name=CLASSES[class_id],
+        confidence=round(
             confidence.item(),
             4,
         ),
-    }
-
-
-def preprocess(image: Image.Image) -> torch.Tensor:
-    transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize(
-                mean=(0.4914, 0.4822, 0.4465),
-                std=(0.2470, 0.2435, 0.2616),
-            ),
-        ]
     )
-
-    tensor = transform(image)
-
-    return tensor.unsqueeze(0)
