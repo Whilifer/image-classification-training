@@ -8,3 +8,7 @@ matplotlib
 pyyaml
 mlflow
 python-multipart
+pillow
+pydantic
+fastapi
+uvicorn

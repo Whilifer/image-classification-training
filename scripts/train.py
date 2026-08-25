@@ -42,6 +42,8 @@ def main():
 
     mlflow.set_experiment("CIFAR10-classification")
 
+    mlflow.set_tracking_uri(config.mlflow_tracking_uri)
+
     with mlflow.start_run(run_name="baseline"):
         mlflow.log_params(
             {
