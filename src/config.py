@@ -14,6 +14,7 @@ class TrainConfig:
     weight_decay: float
     num_workers: int
     device: str
+    mlflow_tracking_uri: str
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "TrainConfig":

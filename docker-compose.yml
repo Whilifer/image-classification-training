@@ -5,8 +5,8 @@ services:
     working_dir: /mlflow
 
     volumes:
-      - ./mlruns:/mlruns
       - ./mlflow.db:/mlflow/mlflow.db
+      - ./mlartifacts:/mlartifacts
 
     command: >
       sh -c "
@@ -14,9 +14,10 @@ services:
       mlflow server
       --host 0.0.0.0
       --port 5000
-      --allowed-hosts '*'
       --backend-store-uri sqlite:////mlflow/mlflow.db
-      --default-artifact-root /mlruns
+      --artifacts-destination /mlartifacts
+      --serve-artifacts
+      --allowed-hosts '*'
       "
 
     ports:
@@ -32,7 +33,7 @@ services:
       MLFLOW_TRACKING_URI: http://mlflow:5000
 
     volumes:
-      - ./mlruns:/mlruns:ro
+      - ./mlartifacts:/mlartifacts:ro
 
     depends_on:
       - mlflow

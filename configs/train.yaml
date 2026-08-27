@@ -9,3 +9,5 @@ weight_decay: 0.0001
 num_workers: 0
 
 device: auto
+
+mlflow_tracking_uri: http://127.0.0.1:5001
