@@ -40,7 +40,9 @@ def main():
     best_validation_accuracy = 0.0
     best_epoch = 0
 
-    mlflow.set_experiment("CIFAR10-classification")
+    mlflow.set_tracking_uri(config.mlflow_tracking_uri)
+    # CIFAR10-classification  CIFAR10-classification-docker
+    mlflow.set_experiment("CIFAR10-classification-docker-v2")
 
     with mlflow.start_run(run_name="baseline"):
         mlflow.log_params(

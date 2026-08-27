@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.routers.health import router as health_router
+from app.routers.predict import router as predict_router
 from src.inference.config import load_config, resolve_device
 from src.inference.model import ModelLoader
 
@@ -10,12 +11,14 @@ from src.inference.model import ModelLoader
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     config = load_config("configs/inference.yaml")
+
     device = resolve_device(config.device)
 
     model_loader = ModelLoader(
         model_name=config.model_name,
         model_version=config.model_version,
         device=device,
+        mlflow_tracking_uri=config.mlflow_tracking_uri,
     )
 
     model_loader.load()
@@ -29,7 +32,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="CIFAR-10 Classifier",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
 app.include_router(health_router)
+app.include_router(predict_router)
