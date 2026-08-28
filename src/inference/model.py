@@ -20,20 +20,28 @@ class ModelLoader:
 
     def load(self):
         mlflow.set_tracking_uri(self.mlflow_tracking_uri)
+
         model_uri = f"models:/{self.model_name}/{self.model_version}"
 
-        print("Loading model:", model_uri)
-        print("Device:", self.device)
+        print("1. Starting model load")
+        print("Model URI:", model_uri)
+        print("Tracking URI:", self.mlflow_tracking_uri)
+        print("Device:", self.device, flush=True)
+
+        print("2. Calling mlflow.pytorch.load_model()", flush=True)
 
         self.model = mlflow.pytorch.load_model(
             model_uri,
             map_location=self.device,
         )
 
+        print("3. MLflow model loaded", flush=True)
+
         if hasattr(self.model, "to"):
+            print("4. Moving model to device", flush=True)
             self.model = self.model.to(self.device)
 
-        print("Model loaded")
+        print("5. Model loaded successfully", flush=True)
 
     def predict(self, tensor: torch.Tensor):
         if self.model is None:
