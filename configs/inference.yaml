@@ -1,4 +1,4 @@
 model_name: CIFARClassifier
-model_version: 2
+model_version: 7
 device: cpu
-mlflow_tracking_uri: http://127.0.0.1:5001
+mlflow_tracking_uri: http://mlflow:5000
