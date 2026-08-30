@@ -1,5 +1,4 @@
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 import pytest
 import torch
@@ -15,7 +14,13 @@ class MockModelLoader:
     device = "cpu"
 
     def predict(self, tensor):
-        return torch.tensor([[10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
+        assert tensor.shape == (1, 3, 32, 32)
+        assert tensor.dtype == torch.float32
+
+        return torch.tensor(
+            [[10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+            dtype=torch.float32,
+        )
 
 
 @asynccontextmanager
@@ -33,26 +38,3 @@ def client():
         yield test_client
 
     app.router.lifespan_context = original_lifespan
-
-
-@pytest.fixture
-def getfile():
-    def _getfile(filename: str) -> Path:
-        return Path(f"tests/assets/{filename}")
-
-    return _getfile
-
-
-@pytest.fixture
-def asset_file(request, getfile):
-    filename, mime = request.param
-    path = getfile(filename)
-
-    with path.open("rb") as file:
-        content = file.read()
-
-    return (
-        path.name,
-        content,
-        mime,
-    )
