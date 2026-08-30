@@ -1,3 +1,5 @@
+import logging
+
 import torch
 
 from src.inference.config import (
@@ -5,6 +7,8 @@ from src.inference.config import (
     resolve_device,
 )
 from src.inference.model import ModelLoader
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -30,8 +34,8 @@ def main():
 
     output = loader.predict(example)
 
-    print("Input shape:", example.shape)
-    print("Output shape:", output.shape)
+    logger.info(f"Input shape: {example.shape}")
+    logger.info(f"Output shape: {output.shape}")
 
 
 if __name__ == "__main__":

@@ -1,11 +1,16 @@
+import logging
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
 
 from src.inference.config import load_config, resolve_device
 from src.inference.model import ModelLoader
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
-async def lifespan(app):
+async def lifespan(app: FastAPI):
     config = load_config("configs/inference.yaml")
 
     device = resolve_device(config.device)
@@ -17,13 +22,13 @@ async def lifespan(app):
         mlflow_tracking_uri=config.mlflow_tracking_uri,
     )
 
-    print("Starting model load")
+    logger.info("Starting model load")
 
     model_loader.load()
 
     app.state.model_loader = model_loader
 
-    print("Model ready")
+    logger.info("Model ready")
 
     yield
 
