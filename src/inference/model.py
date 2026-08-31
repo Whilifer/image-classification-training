@@ -1,6 +1,10 @@
+import logging
+
 import mlflow
 import mlflow.pytorch
 import torch
+
+logger = logging.getLogger(__name__)
 
 
 class ModelLoader:
@@ -23,25 +27,29 @@ class ModelLoader:
 
         model_uri = f"models:/{self.model_name}/{self.model_version}"
 
-        print("1. Starting model load")
-        print("Model URI:", model_uri)
-        print("Tracking URI:", self.mlflow_tracking_uri)
-        print("Device:", self.device, flush=True)
+        logger.info("1. Starting model load")
+        logger.info(f"Model URI:, {model_uri}")
+        logger.info(f"Tracking URI:, {self.mlflow_tracking_uri}")
+        logger.info(f"Device:, {self.device}")
 
-        print("2. Calling mlflow.pytorch.load_model()", flush=True)
+        logger.info("2. Calling mlflow.pytorch.load_model()")
 
-        self.model = mlflow.pytorch.load_model(
-            model_uri,
-            map_location=self.device,
-        )
+        try:
+            self.model = mlflow.pytorch.load_model(
+                model_uri,
+                map_location=self.device,
+            )
+        except Exception:
+            logger.exception(f"Failed to load model: %s, {model_uri}")
+            raise
 
-        print("3. MLflow model loaded", flush=True)
+        logger.info("3. MLflow model loaded")
 
         if hasattr(self.model, "to"):
-            print("4. Moving model to device", flush=True)
+            logger.info("4. Moving model to device")
             self.model = self.model.to(self.device)
 
-        print("5. Model loaded successfully", flush=True)
+        logger.info("5. Model loaded successfully")
 
     def predict(self, tensor: torch.Tensor):
         if self.model is None:

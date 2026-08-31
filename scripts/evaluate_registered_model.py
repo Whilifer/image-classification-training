@@ -1,3 +1,5 @@
+import logging
+
 import mlflow
 import torch
 from torch import nn
@@ -5,14 +7,16 @@ from torch import nn
 from src.data.dataset import create_dataloaders
 from src.training.evaluate import evaluate_exported_model
 
+logger = logging.getLogger(__name__)
+
 MODEL_URI = "models:/CIFARClassifier/2"
 
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    print("Device:", device)
-    print("Loading model:", MODEL_URI)
+    logger.info(f"Device: {device}")
+    logger.info(f"Loading model: {MODEL_URI}")
 
     model = mlflow.pytorch.load_model(
         MODEL_URI,
@@ -36,7 +40,7 @@ def main():
         device=device,
     )
 
-    print(
+    logger.info(
         f"Registered model | Test loss: {test_loss:.4f} | Accuracy: {test_accuracy:.4f}"
     )
 

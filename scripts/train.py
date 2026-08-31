@@ -1,3 +1,5 @@
+import logging
+
 import mlflow
 import mlflow.pytorch
 from mlflow.models import infer_signature
@@ -11,6 +13,8 @@ from src.training.checkpoint import load_checkpoint, save_checkpoint
 from src.training.evaluate import evaluate
 from src.training.train import train_one_epoch
 
+logger = logging.getLogger(__name__)
+
 
 def main():
     config = TrainConfig.from_yaml("configs/train.yaml")
@@ -19,7 +23,7 @@ def main():
 
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    print(f"Device: {device}")
+    logger.info(f"Device: {device}")
 
     train_loader, validation_loader, test_loader = create_dataloaders(
         data_dir=config.data_dir,
@@ -90,12 +94,10 @@ def main():
                 step=epoch + 1,
             )
 
-            print(
-                f"Epoch {epoch + 1}/{config.epochs} | "
-                f"Train loss: {train_loss:.4f} | "
-                f"Validation loss: {validation_loss:.4f} | "
-                f"Validation accuracy: {validation_accuracy:.4f}"
-            )
+            logger.info(f"Epoch {epoch + 1}/{config.epochs}")
+            logger.info(f"Train loss: {train_loss:.4f}")
+            logger.info(f"Validation loss: {validation_loss:.4f}")
+            logger.info(f"Validation accuracy: {validation_accuracy:.4f}")
 
             if validation_accuracy > best_validation_accuracy:
                 best_validation_accuracy = validation_accuracy
@@ -106,7 +108,7 @@ def main():
                     path="artifacts/best_model.pt",
                 )
 
-                print("New best model saved")
+                logger.info("New best model saved")
 
         best_model_path = "artifacts/best_model.pt"
 
@@ -140,7 +142,7 @@ def main():
 
         model_uri = f"runs:/{mlflow.active_run().info.run_id}/model"
 
-        print("Model URI:", model_uri)
+        logger.info(f"Model URI: {model_uri}")
 
         loaded_model = mlflow.pytorch.load_model(model_uri)
         # loaded_model.eval()
@@ -153,7 +155,7 @@ def main():
             loaded_output,
         )
 
-        print("MLflow model successfully loaded and verified")
+        logger.info("MLflow model successfully loaded and verified")
 
         model.to(device)
 
@@ -186,7 +188,8 @@ def main():
             "configs/train.yaml",
         )
 
-        print(f"Final test | Loss: {test_loss:.4f} | Accuracy: {test_accuracy:.4f}")
+        logger.info(f"Final test Loss: {test_loss:.4f}")
+        logger.info(f"Final test Accuracy: {test_accuracy:.4f}")
 
 
 if __name__ == "__main__":

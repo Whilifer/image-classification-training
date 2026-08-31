@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY src ./src
 COPY configs ./configs
+COPY logging_config.py .
 
 EXPOSE 8000
 
