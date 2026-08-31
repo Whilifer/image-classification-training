@@ -6,17 +6,20 @@ from mlflow.models import infer_signature
 from torch import inference_mode, nn, testing
 from torch.optim import Adam
 
+from logging_config import setup_logging
 from src.config import TrainConfig
 from src.data.dataset import create_dataloaders
 from src.models.classifier import CIFARClassifier
 from src.training.checkpoint import load_checkpoint, save_checkpoint
-from src.training.evaluate import evaluate
+from src.training.evaluate import collect_predictions, evaluate
+from src.training.metrics import classification_metrics
 from src.training.train import train_one_epoch
-
-logger = logging.getLogger(__name__)
 
 
 def main():
+    setup_logging()
+    logger = logging.getLogger(__name__)
+
     config = TrainConfig.from_yaml("configs/train.yaml")
 
     device = config.get_device()
@@ -166,11 +169,29 @@ def main():
             device=device,
         )
 
+        targets, predictions = collect_predictions(
+            model=model,
+            dataloader=test_loader,
+            device=device,
+        )
+
+        metrics = classification_metrics(
+            targets=targets,
+            predictions=predictions,
+        )
+
         mlflow.log_metrics(
             {
-                "test_loss": test_loss,
-                "test_accuracy": test_accuracy,
+                "test_accuracy": metrics["accuracy"],
+                "test_precision_macro": metrics["precision_macro"],
+                "test_recall_macro": metrics["recall_macro"],
+                "test_f1_macro": metrics["f1_macro"],
             }
+        )
+
+        mlflow.log_dict(
+            metrics["confusion_matrix"],
+            "metrics/confusion_matrix.json",
         )
 
         mlflow.log_metric(

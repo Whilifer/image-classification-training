@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 class InferenceConfig(BaseModel):
     model_name: str
-    model_version: int
+    model_alias: str
     device: str
     mlflow_tracking_uri: str
 

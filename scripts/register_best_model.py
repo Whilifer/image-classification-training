@@ -5,7 +5,7 @@ from mlflow.tracking import MlflowClient
 
 logger = logging.getLogger(__name__)
 
-EXPERIMENT_NAME = "CIFAR10-classification"
+EXPERIMENT_NAME = "CIFAR10-classification-docker-v2"
 METRIC_NAME = "best_validation_accuracy"
 MODEL_NAME = "CIFARClassifier"
 
@@ -46,7 +46,17 @@ def main():
         name=MODEL_NAME,
     )
 
-    logger.info(f"Registered model: {result.name} version {result.version}")
+    client.set_registered_model_alias(
+        MODEL_NAME,
+        "champion",
+        result.version,
+    )
+
+    logger.info(
+        "Registered model: %s version %s as @champion",
+        result.name,
+        result.version,
+    )
 
 
 if __name__ == "__main__":
