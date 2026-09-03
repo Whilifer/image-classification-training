@@ -19,6 +19,6 @@ def health(request: Request):
         status="ok",
         model_loaded=model_loader.model is not None,
         model=model_loader.model_name,
-        model_version=model_loader.model_version,
+        model_alias=model_loader.model_alias,
         device=str(model_loader.device),
     )

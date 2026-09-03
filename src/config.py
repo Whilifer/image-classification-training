@@ -16,6 +16,8 @@ class TrainConfig:
     device: str
     mlflow_tracking_uri: str
 
+    augmentation: dict
+
     @classmethod
     def from_yaml(cls, path: str | Path) -> "TrainConfig":
         path = Path(path)

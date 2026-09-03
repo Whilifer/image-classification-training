@@ -1,7 +1,7 @@
 data_dir: data
 
 batch_size: 128
-epochs: 10
+epochs: 20
 
 learning_rate: 0.001
 weight_decay: 0.0001
@@ -11,3 +11,9 @@ num_workers: 0
 device: auto
 
 mlflow_tracking_uri: http://127.0.0.1:5001
+
+augmentation:
+  enabled: true
+  horizontal_flip: true
+  random_crop: true
+  crop_padding: 4

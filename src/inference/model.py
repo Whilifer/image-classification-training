@@ -11,12 +11,12 @@ class ModelLoader:
     def __init__(
         self,
         model_name: str,
-        model_version: int,
+        model_alias: str,
         device: torch.device,
         mlflow_tracking_uri: str,
     ):
         self.model_name = model_name
-        self.model_version = model_version
+        self.model_alias = model_alias
         self.device = device
         self.mlflow_tracking_uri = mlflow_tracking_uri
 
@@ -25,7 +25,7 @@ class ModelLoader:
     def load(self):
         mlflow.set_tracking_uri(self.mlflow_tracking_uri)
 
-        model_uri = f"models:/{self.model_name}/{self.model_version}"
+        model_uri = f"models:/{self.model_name}@{self.model_alias}"
 
         logger.info("1. Starting model load")
         logger.info(f"Model URI:, {model_uri}")

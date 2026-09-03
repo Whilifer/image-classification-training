@@ -78,3 +78,26 @@ def evaluate_exported_model(
         total_loss / total_samples,
         correct / total_samples,
     )
+
+
+def collect_predictions(
+    model: nn.Module,
+    dataloader: DataLoader,
+    device: torch.device,
+) -> tuple[list[int], list[int]]:
+    model.eval()
+
+    targets = []
+    predictions = []
+
+    with torch.inference_mode():
+        for images, labels in dataloader:
+            images = images.to(device, non_blocking=True)
+
+            outputs = model(images)
+            predicted = outputs.argmax(dim=1)
+
+            targets.extend(labels.tolist())
+            predictions.extend(predicted.cpu().tolist())
+
+    return targets, predictions

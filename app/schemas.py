@@ -11,5 +11,5 @@ class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
     model: str
-    model_version: int
+    model_alias: str
     device: str
