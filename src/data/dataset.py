@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 
 CLASSES = (
@@ -18,14 +18,53 @@ CLASSES = (
 )
 
 
+def create_train_transform(augmentation: dict):
+    transforms_list = []
+
+    if augmentation.get("horizontal_flip", False):
+        transforms_list.append(transforms.RandomHorizontalFlip())
+
+    if augmentation.get("random_crop", False):
+        padding = augmentation.get("crop_padding", 4)
+        transforms_list.append(transforms.RandomCrop(32, padding=padding))
+
+    transforms_list.extend(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize(
+                mean=(0.4914, 0.4822, 0.4465),
+                std=(0.2470, 0.2435, 0.2616),
+            ),
+        ]
+    )
+
+    return transforms.Compose(transforms_list)
+
+
 def create_dataloaders(
     data_dir: str | Path,
     batch_size: int,
     num_workers: int = 0,
+    augmentation: dict | None = None,
 ):
     data_dir = Path(data_dir)
 
-    transform = transforms.Compose(
+    augmentation = augmentation or {}
+
+    if augmentation.get("enabled", False):
+        train_transform = create_train_transform(augmentation)
+    else:
+        train_transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=(0.4914, 0.4822, 0.4465),
+                    std=(0.2470, 0.2616, 0.2616),
+                ),
+            ]
+        )
+
+    eval_transform = transforms.Compose(
         [
             transforms.ToTensor(),
             transforms.Normalize(
@@ -39,21 +78,41 @@ def create_dataloaders(
         root=data_dir,
         train=True,
         download=True,
-        transform=transform,
+        transform=train_transform,
     )
+
+    validation_dataset = datasets.CIFAR10(
+        root=data_dir,
+        train=True,
+        download=True,
+        transform=eval_transform,
+    )
+
     generator = torch.Generator().manual_seed(42)
 
-    train_dataset, validation_dataset = random_split(
-        train_dataset,
-        [45_000, 5_000],
+    indices = torch.randperm(
+        len(train_dataset),
         generator=generator,
+    )
+
+    train_indices = indices[:45_000]
+    validation_indices = indices[45_000:]
+
+    train_dataset = Subset(
+        train_dataset,
+        train_indices,
+    )
+
+    validation_dataset = Subset(
+        validation_dataset,
+        validation_indices,
     )
 
     test_dataset = datasets.CIFAR10(
         root=data_dir,
         train=False,
         download=True,
-        transform=transform,
+        transform=eval_transform,
     )
 
     train_loader = DataLoader(

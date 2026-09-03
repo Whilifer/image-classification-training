@@ -32,6 +32,7 @@ def main():
         data_dir=config.data_dir,
         batch_size=config.batch_size,
         num_workers=config.num_workers,
+        augmentation=config.augmentation,
     )
 
     model = CIFARClassifier().to(device)
@@ -62,6 +63,14 @@ def main():
                 "device": str(device),
                 "optimizer": "Adam",
                 "model": "CIFARClassifier",
+                "augmentation_enabled": config.augmentation.get("enabled", False),
+                "augmentation_horizontal_flip": config.augmentation.get(
+                    "horizontal_flip", False
+                ),
+                "augmentation_random_crop": config.augmentation.get(
+                    "random_crop", False
+                ),
+                "augmentation_crop_padding": config.augmentation.get("crop_padding", 0),
             }
         )
 
