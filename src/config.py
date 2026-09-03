@@ -6,6 +6,16 @@ import yaml
 
 
 @dataclass
+class AugmentationConfig:
+    enabled: bool = False
+    horizontal_flip: bool = False
+    random_crop: bool = False
+    crop_padding: int = 4
+    random_rotation: bool = False
+    rotation_degrees: float = 15.0
+
+
+@dataclass
 class TrainConfig:
     data_dir: str
     batch_size: int
@@ -15,8 +25,7 @@ class TrainConfig:
     num_workers: int
     device: str
     mlflow_tracking_uri: str
-
-    augmentation: dict
+    augmentation: AugmentationConfig
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "TrainConfig":
@@ -24,6 +33,8 @@ class TrainConfig:
 
         with path.open("r", encoding="utf-8") as file:
             config = yaml.safe_load(file)
+
+        config["augmentation"] = AugmentationConfig(**config.get("augmentation", {}))
 
         return cls(**config)
 

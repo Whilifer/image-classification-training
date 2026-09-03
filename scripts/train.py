@@ -63,14 +63,12 @@ def main():
                 "device": str(device),
                 "optimizer": "Adam",
                 "model": "CIFARClassifier",
-                "augmentation_enabled": config.augmentation.get("enabled", False),
-                "augmentation_horizontal_flip": config.augmentation.get(
-                    "horizontal_flip", False
-                ),
-                "augmentation_random_crop": config.augmentation.get(
-                    "random_crop", False
-                ),
-                "augmentation_crop_padding": config.augmentation.get("crop_padding", 0),
+                "augmentation_enabled": config.augmentation.enabled,
+                "augmentation_horizontal_flip": config.augmentation.horizontal_flip,
+                "augmentation_random_crop": config.augmentation.random_crop,
+                "augmentation_crop_padding": config.augmentation.crop_padding,
+                "augmentation_random_rotation": config.augmentation.random_rotation,
+                "augmentation_rotation_degrees": config.augmentation.rotation_degrees,
             }
         )
 

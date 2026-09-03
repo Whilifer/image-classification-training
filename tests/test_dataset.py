@@ -1,3 +1,4 @@
+from src.config import AugmentationConfig
 from src.data.dataset import create_dataloaders
 
 
@@ -32,3 +33,27 @@ def test_dataset_batch_shapes():
 
     assert test_images.shape == (128, 3, 32, 32)
     assert test_labels.shape == (128,)
+
+
+def test_dataset_with_augmentation():
+    augmentation = AugmentationConfig(
+        enabled=True,
+        horizontal_flip=True,
+        random_crop=True,
+        crop_padding=4,
+    )
+
+    train_loader, validation_loader, test_loader = create_dataloaders(
+        data_dir="data",
+        batch_size=128,
+        num_workers=0,
+        augmentation=augmentation,
+    )
+
+    train_images, _ = next(iter(train_loader))
+    validation_images, _ = next(iter(validation_loader))
+    test_images, _ = next(iter(test_loader))
+
+    assert train_images.shape[1:] == (3, 32, 32)
+    assert validation_images.shape[1:] == (3, 32, 32)
+    assert test_images.shape[1:] == (3, 32, 32)
