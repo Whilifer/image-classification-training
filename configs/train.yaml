@@ -1,11 +1,12 @@
+experiment_name: CIFAR10-classification-docker-v2
+run_name: augmentation_flip_crop_20ep
+
 data_dir: data
 
 batch_size: 128
-epochs: 20
-
+epochs: 30
 learning_rate: 0.001
 weight_decay: 0.0001
-
 num_workers: 0
 
 device: auto
@@ -17,5 +18,9 @@ augmentation:
   horizontal_flip: true
   random_crop: true
   crop_padding: 4
-  random_rotation: false
+  random_rotation: true
   rotation_degrees: 15
+
+early_stopping:
+  enabled: true
+  patience: 5

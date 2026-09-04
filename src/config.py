@@ -6,6 +6,12 @@ import yaml
 
 
 @dataclass
+class EarlyStoppingConfig:
+    enabled: bool = True
+    patience: int = 5
+
+
+@dataclass
 class AugmentationConfig:
     enabled: bool = False
     horizontal_flip: bool = False
@@ -17,6 +23,8 @@ class AugmentationConfig:
 
 @dataclass
 class TrainConfig:
+    experiment_name: str
+    run_name: str
     data_dir: str
     batch_size: int
     epochs: int
@@ -26,6 +34,7 @@ class TrainConfig:
     device: str
     mlflow_tracking_uri: str
     augmentation: AugmentationConfig
+    early_stopping: EarlyStoppingConfig
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "TrainConfig":
@@ -35,6 +44,9 @@ class TrainConfig:
             config = yaml.safe_load(file)
 
         config["augmentation"] = AugmentationConfig(**config.get("augmentation", {}))
+        config["early_stopping"] = EarlyStoppingConfig(
+            **config.get("early_stopping", {})
+        )
 
         return cls(**config)
 

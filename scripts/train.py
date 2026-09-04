@@ -47,12 +47,13 @@ def main():
 
     best_validation_accuracy = 0.0
     best_epoch = 0
+    epochs_without_improvement = 0
 
     mlflow.set_tracking_uri(config.mlflow_tracking_uri)
     # CIFAR10-classification  CIFAR10-classification-docker
-    mlflow.set_experiment("CIFAR10-classification-docker-v2")
+    mlflow.set_experiment(config.experiment_name)
 
-    with mlflow.start_run(run_name="baseline"):
+    with mlflow.start_run(run_name=config.run_name):
         mlflow.log_params(
             {
                 "batch_size": config.batch_size,
@@ -69,6 +70,8 @@ def main():
                 "augmentation_crop_padding": config.augmentation.crop_padding,
                 "augmentation_random_rotation": config.augmentation.random_rotation,
                 "augmentation_rotation_degrees": config.augmentation.rotation_degrees,
+                "early_stopping_enabled": config.early_stopping.enabled,
+                "early_stopping_patience": config.early_stopping.patience,
             }
         )
 
@@ -112,6 +115,7 @@ def main():
             if validation_accuracy > best_validation_accuracy:
                 best_validation_accuracy = validation_accuracy
                 best_epoch = epoch + 1
+                epochs_without_improvement = 0
 
                 save_checkpoint(
                     model=model,
@@ -119,6 +123,18 @@ def main():
                 )
 
                 logger.info("New best model saved")
+            else:
+                epochs_without_improvement += 1
+
+            if (
+                config.early_stopping.enabled
+                and epochs_without_improvement >= config.early_stopping.patience
+            ):
+                logger.info(
+                    "Early stopping triggered after %d epochs without improvement",
+                    epochs_without_improvement,
+                )
+                break
 
         best_model_path = "artifacts/best_model.pt"
 
@@ -209,6 +225,11 @@ def main():
         mlflow.log_metric(
             "best_epoch",
             best_epoch,
+        )
+
+        mlflow.log_metric(
+            "epochs_completed",
+            best_epoch if config.early_stopping.enabled else config.epochs,
         )
 
         mlflow.log_artifact("artifacts/best_model.pt")
