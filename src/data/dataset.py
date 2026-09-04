@@ -4,6 +4,8 @@ import torch
 from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 
+from src.config import AugmentationConfig
+
 CLASSES = (
     "airplane",
     "automobile",
@@ -18,15 +20,28 @@ CLASSES = (
 )
 
 
-def create_train_transform(augmentation: dict):
+def create_train_transform(
+    augmentation: AugmentationConfig,
+):
     transforms_list = []
 
-    if augmentation.get("horizontal_flip", False):
+    if augmentation.horizontal_flip:
         transforms_list.append(transforms.RandomHorizontalFlip())
 
-    if augmentation.get("random_crop", False):
-        padding = augmentation.get("crop_padding", 4)
-        transforms_list.append(transforms.RandomCrop(32, padding=padding))
+    if augmentation.random_crop:
+        transforms_list.append(
+            transforms.RandomCrop(
+                32,
+                padding=augmentation.crop_padding,
+            )
+        )
+
+    if augmentation.random_rotation:
+        transforms_list.append(
+            transforms.RandomRotation(
+                augmentation.rotation_degrees,
+            )
+        )
 
     transforms_list.extend(
         [
@@ -45,13 +60,11 @@ def create_dataloaders(
     data_dir: str | Path,
     batch_size: int,
     num_workers: int = 0,
-    augmentation: dict | None = None,
+    augmentation: AugmentationConfig | None = None,
 ):
     data_dir = Path(data_dir)
 
-    augmentation = augmentation or {}
-
-    if augmentation.get("enabled", False):
+    if augmentation is not None and augmentation.enabled:
         train_transform = create_train_transform(augmentation)
     else:
         train_transform = transforms.Compose(
@@ -59,7 +72,7 @@ def create_dataloaders(
                 transforms.ToTensor(),
                 transforms.Normalize(
                     mean=(0.4914, 0.4822, 0.4465),
-                    std=(0.2470, 0.2616, 0.2616),
+                    std=(0.2470, 0.2435, 0.2616),
                 ),
             ]
         )

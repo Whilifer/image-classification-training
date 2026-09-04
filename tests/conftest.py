@@ -9,7 +9,7 @@ from app.main import app
 
 class MockModelLoader:
     model_name = "CIFARClassifier"
-    model_version = 7
+    model_alias = "champion"
     model = object()
     device = "cpu"
 

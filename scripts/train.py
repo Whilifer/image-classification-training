@@ -5,6 +5,7 @@ import mlflow.pytorch
 from mlflow.models import infer_signature
 from torch import inference_mode, nn, testing
 from torch.optim import Adam
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from logging_config import setup_logging
 from src.config import TrainConfig
@@ -45,14 +46,28 @@ def main():
         weight_decay=config.weight_decay,
     )
 
+    scheduler = None
+
+    if config.scheduler.enabled:
+        if config.scheduler.type == "cosine":
+            scheduler = CosineAnnealingLR(
+                optimizer,
+                T_max=config.epochs,
+                eta_min=config.scheduler.min_learning_rate,
+            )
+        else:
+            raise ValueError(f"Unsupported scheduler type: {config.scheduler.type}")
+
     best_validation_accuracy = 0.0
     best_epoch = 0
+    epochs_without_improvement = 0
+    epochs_completed = 0
 
     mlflow.set_tracking_uri(config.mlflow_tracking_uri)
     # CIFAR10-classification  CIFAR10-classification-docker
-    mlflow.set_experiment("CIFAR10-classification-docker-v2")
+    mlflow.set_experiment(config.experiment_name)
 
-    with mlflow.start_run(run_name="baseline"):
+    with mlflow.start_run(run_name=config.run_name):
         mlflow.log_params(
             {
                 "batch_size": config.batch_size,
@@ -63,14 +78,17 @@ def main():
                 "device": str(device),
                 "optimizer": "Adam",
                 "model": "CIFARClassifier",
-                "augmentation_enabled": config.augmentation.get("enabled", False),
-                "augmentation_horizontal_flip": config.augmentation.get(
-                    "horizontal_flip", False
-                ),
-                "augmentation_random_crop": config.augmentation.get(
-                    "random_crop", False
-                ),
-                "augmentation_crop_padding": config.augmentation.get("crop_padding", 0),
+                "augmentation_enabled": config.augmentation.enabled,
+                "augmentation_horizontal_flip": config.augmentation.horizontal_flip,
+                "augmentation_random_crop": config.augmentation.random_crop,
+                "augmentation_crop_padding": config.augmentation.crop_padding,
+                "augmentation_random_rotation": config.augmentation.random_rotation,
+                "augmentation_rotation_degrees": config.augmentation.rotation_degrees,
+                "early_stopping_enabled": config.early_stopping.enabled,
+                "early_stopping_patience": config.early_stopping.patience,
+                "scheduler_enabled": config.scheduler.enabled,
+                "scheduler_type": config.scheduler.type,
+                "scheduler_min_learning_rate": config.scheduler.min_learning_rate,
             }
         )
 
@@ -82,6 +100,8 @@ def main():
         )
 
         for epoch in range(config.epochs):
+            epochs_completed = epoch + 1
+
             train_loss = train_one_epoch(
                 model=model,
                 dataloader=train_loader,
@@ -97,11 +117,14 @@ def main():
                 device=device,
             )
 
+            current_learning_rate = optimizer.param_groups[0]["lr"]
+
             mlflow.log_metrics(
                 {
                     "train_loss": train_loss,
                     "validation_loss": validation_loss,
                     "validation_accuracy": validation_accuracy,
+                    "learning_rate": current_learning_rate,
                 },
                 step=epoch + 1,
             )
@@ -110,10 +133,12 @@ def main():
             logger.info(f"Train loss: {train_loss:.4f}")
             logger.info(f"Validation loss: {validation_loss:.4f}")
             logger.info(f"Validation accuracy: {validation_accuracy:.4f}")
+            logger.info(f"Learning rate: {current_learning_rate:.8f}")
 
             if validation_accuracy > best_validation_accuracy:
                 best_validation_accuracy = validation_accuracy
                 best_epoch = epoch + 1
+                epochs_without_improvement = 0
 
                 save_checkpoint(
                     model=model,
@@ -121,6 +146,21 @@ def main():
                 )
 
                 logger.info("New best model saved")
+            else:
+                epochs_without_improvement += 1
+
+            if (
+                config.early_stopping.enabled
+                and epochs_without_improvement >= config.early_stopping.patience
+            ):
+                logger.info(
+                    "Early stopping triggered after %d epochs without improvement",
+                    epochs_without_improvement,
+                )
+                break
+
+            if scheduler is not None:
+                scheduler.step()
 
         best_model_path = "artifacts/best_model.pt"
 
@@ -211,6 +251,11 @@ def main():
         mlflow.log_metric(
             "best_epoch",
             best_epoch,
+        )
+
+        mlflow.log_metric(
+            "epochs_completed",
+            epochs_completed,
         )
 
         mlflow.log_artifact("artifacts/best_model.pt")
