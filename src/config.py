@@ -6,6 +6,13 @@ import yaml
 
 
 @dataclass
+class SchedulerConfig:
+    enabled: bool = False
+    type: str = "cosine"
+    min_learning_rate: float = 0.00001
+
+
+@dataclass
 class EarlyStoppingConfig:
     enabled: bool = True
     patience: int = 5
@@ -35,6 +42,7 @@ class TrainConfig:
     mlflow_tracking_uri: str
     augmentation: AugmentationConfig
     early_stopping: EarlyStoppingConfig
+    scheduler: SchedulerConfig
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "TrainConfig":
@@ -47,6 +55,7 @@ class TrainConfig:
         config["early_stopping"] = EarlyStoppingConfig(
             **config.get("early_stopping", {})
         )
+        config["scheduler"] = SchedulerConfig(**config.get("scheduler", {}))
 
         return cls(**config)
 

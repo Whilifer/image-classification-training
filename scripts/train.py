@@ -5,6 +5,7 @@ import mlflow.pytorch
 from mlflow.models import infer_signature
 from torch import inference_mode, nn, testing
 from torch.optim import Adam
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from logging_config import setup_logging
 from src.config import TrainConfig
@@ -45,9 +46,22 @@ def main():
         weight_decay=config.weight_decay,
     )
 
+    scheduler = None
+
+    if config.scheduler.enabled:
+        if config.scheduler.type == "cosine":
+            scheduler = CosineAnnealingLR(
+                optimizer,
+                T_max=config.epochs,
+                eta_min=config.scheduler.min_learning_rate,
+            )
+        else:
+            raise ValueError(f"Unsupported scheduler type: {config.scheduler.type}")
+
     best_validation_accuracy = 0.0
     best_epoch = 0
     epochs_without_improvement = 0
+    epochs_completed = 0
 
     mlflow.set_tracking_uri(config.mlflow_tracking_uri)
     # CIFAR10-classification  CIFAR10-classification-docker
@@ -72,6 +86,9 @@ def main():
                 "augmentation_rotation_degrees": config.augmentation.rotation_degrees,
                 "early_stopping_enabled": config.early_stopping.enabled,
                 "early_stopping_patience": config.early_stopping.patience,
+                "scheduler_enabled": config.scheduler.enabled,
+                "scheduler_type": config.scheduler.type,
+                "scheduler_min_learning_rate": config.scheduler.min_learning_rate,
             }
         )
 
@@ -83,6 +100,8 @@ def main():
         )
 
         for epoch in range(config.epochs):
+            epochs_completed = epoch + 1
+
             train_loss = train_one_epoch(
                 model=model,
                 dataloader=train_loader,
@@ -98,11 +117,14 @@ def main():
                 device=device,
             )
 
+            current_learning_rate = optimizer.param_groups[0]["lr"]
+
             mlflow.log_metrics(
                 {
                     "train_loss": train_loss,
                     "validation_loss": validation_loss,
                     "validation_accuracy": validation_accuracy,
+                    "learning_rate": current_learning_rate,
                 },
                 step=epoch + 1,
             )
@@ -111,6 +133,7 @@ def main():
             logger.info(f"Train loss: {train_loss:.4f}")
             logger.info(f"Validation loss: {validation_loss:.4f}")
             logger.info(f"Validation accuracy: {validation_accuracy:.4f}")
+            logger.info(f"Learning rate: {current_learning_rate:.8f}")
 
             if validation_accuracy > best_validation_accuracy:
                 best_validation_accuracy = validation_accuracy
@@ -135,6 +158,9 @@ def main():
                     epochs_without_improvement,
                 )
                 break
+
+            if scheduler is not None:
+                scheduler.step()
 
         best_model_path = "artifacts/best_model.pt"
 
@@ -229,7 +255,7 @@ def main():
 
         mlflow.log_metric(
             "epochs_completed",
-            best_epoch if config.early_stopping.enabled else config.epochs,
+            epochs_completed,
         )
 
         mlflow.log_artifact("artifacts/best_model.pt")
