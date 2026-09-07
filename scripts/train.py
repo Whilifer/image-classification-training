@@ -11,10 +11,10 @@ from logging_config import setup_logging
 from src.config import TrainConfig
 from src.data.dataset import create_dataloaders
 from src.models.classifier import CIFARClassifier
-from src.training.checkpoint import load_checkpoint, save_checkpoint
+from src.training.checkpoint import load_checkpoint
 from src.training.evaluate import collect_predictions, evaluate
 from src.training.metrics import classification_metrics
-from src.training.train import train_one_epoch
+from src.training.pipeline import EpochResult, train_model
 
 
 def main():
@@ -58,13 +58,7 @@ def main():
         else:
             raise ValueError(f"Unsupported scheduler type: {config.scheduler.type}")
 
-    best_validation_accuracy = 0.0
-    best_epoch = 0
-    epochs_without_improvement = 0
-    epochs_completed = 0
-
     mlflow.set_tracking_uri(config.mlflow_tracking_uri)
-    # CIFAR10-classification  CIFAR10-classification-docker
     mlflow.set_experiment(config.experiment_name)
 
     with mlflow.start_run(run_name=config.run_name):
@@ -99,68 +93,35 @@ def main():
             }
         )
 
-        for epoch in range(config.epochs):
-            epochs_completed = epoch + 1
-
-            train_loss = train_one_epoch(
-                model=model,
-                dataloader=train_loader,
-                criterion=criterion,
-                optimizer=optimizer,
-                device=device,
-            )
-
-            validation_loss, validation_accuracy = evaluate(
-                model=model,
-                dataloader=validation_loader,
-                criterion=criterion,
-                device=device,
-            )
-
-            current_learning_rate = optimizer.param_groups[0]["lr"]
-
+        def log_epoch_to_mlflow(result: EpochResult) -> None:
             mlflow.log_metrics(
                 {
-                    "train_loss": train_loss,
-                    "validation_loss": validation_loss,
-                    "validation_accuracy": validation_accuracy,
-                    "learning_rate": current_learning_rate,
+                    "train_loss": result.train_loss,
+                    "validation_loss": result.validation_loss,
+                    "validation_accuracy": result.validation_accuracy,
+                    "learning_rate": result.learning_rate,
                 },
-                step=epoch + 1,
+                step=result.epoch,
             )
 
-            logger.info(f"Epoch {epoch + 1}/{config.epochs}")
-            logger.info(f"Train loss: {train_loss:.4f}")
-            logger.info(f"Validation loss: {validation_loss:.4f}")
-            logger.info(f"Validation accuracy: {validation_accuracy:.4f}")
-            logger.info(f"Learning rate: {current_learning_rate:.8f}")
+        training_result = train_model(
+            model=model,
+            train_loader=train_loader,
+            validation_loader=validation_loader,
+            criterion=criterion,
+            optimizer=optimizer,
+            device=device,
+            epochs=config.epochs,
+            early_stopping_enabled=config.early_stopping.enabled,
+            early_stopping_patience=config.early_stopping.patience,
+            checkpoint_path="artifacts/best_model.pt",
+            scheduler=scheduler,
+            on_epoch_end=log_epoch_to_mlflow,
+        )
 
-            if validation_accuracy > best_validation_accuracy:
-                best_validation_accuracy = validation_accuracy
-                best_epoch = epoch + 1
-                epochs_without_improvement = 0
-
-                save_checkpoint(
-                    model=model,
-                    path="artifacts/best_model.pt",
-                )
-
-                logger.info("New best model saved")
-            else:
-                epochs_without_improvement += 1
-
-            if (
-                config.early_stopping.enabled
-                and epochs_without_improvement >= config.early_stopping.patience
-            ):
-                logger.info(
-                    "Early stopping triggered after %d epochs without improvement",
-                    epochs_without_improvement,
-                )
-                break
-
-            if scheduler is not None:
-                scheduler.step()
+        best_validation_accuracy = training_result.best_validation_accuracy
+        best_epoch = training_result.best_epoch
+        epochs_completed = training_result.epochs_completed
 
         best_model_path = "artifacts/best_model.pt"
 
