@@ -8,7 +8,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from src.config import TrainConfig
 from src.data.dataset import create_dataloaders
 from src.models.classifier import CIFARClassifier
-from src.training.pipeline import train_model
+from src.training.pipeline import EpochResult, train_model
 
 logging.basicConfig(
     level=logging.INFO,
@@ -76,6 +76,22 @@ def objective(trial: optuna.Trial) -> float:
             eta_min=config.scheduler.min_learning_rate,
         )
 
+    def on_epoch_end(result: EpochResult) -> bool:
+        trial.report(
+            result.validation_accuracy,
+            step=result.epoch,
+        )
+
+        if trial.should_prune():
+            logger.info(
+                "Trial %d pruned at epoch %d",
+                trial.number,
+                result.epoch,
+            )
+            return True
+
+        return False
+
     training_result = train_model(
         model=model,
         train_loader=train_loader,
@@ -88,7 +104,11 @@ def objective(trial: optuna.Trial) -> float:
         early_stopping_patience=config.early_stopping.patience,
         checkpoint_path=f"artifacts/optuna_trial_{trial.number}.pt",
         scheduler=scheduler,
+        on_epoch_end=on_epoch_end,
     )
+
+    if trial.should_prune():
+        raise optuna.TrialPruned()
 
     validation_accuracy = training_result.best_validation_accuracy
 
@@ -104,12 +124,19 @@ def objective(trial: optuna.Trial) -> float:
 
 def main() -> None:
     study = optuna.create_study(
+        study_name="cifar10_hyperparameter_optimization",
+        storage="sqlite:///optuna.db",
+        load_if_exists=True,
         direction="maximize",
+        pruner=optuna.pruners.MedianPruner(
+            n_startup_trials=5,
+            n_warmup_steps=5,
+        ),
     )
 
     study.optimize(
         objective,
-        n_trials=5,
+        n_trials=10,
     )
 
     print()

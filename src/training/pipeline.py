@@ -32,6 +32,9 @@ class TrainingResult:
     epochs_completed: int
 
 
+EpochCallback = Callable[[EpochResult], bool | None]
+
+
 def train_model(
     model: nn.Module,
     train_loader: DataLoader,
@@ -44,7 +47,7 @@ def train_model(
     early_stopping_patience: int,
     checkpoint_path: str | Path,
     scheduler: LRScheduler | None = None,
-    on_epoch_end: Callable[[EpochResult], None] | None = None,
+    on_epoch_end: EpochCallback | None = None,
 ) -> TrainingResult:
     best_validation_accuracy = 0.0
     best_epoch = 0
@@ -80,7 +83,14 @@ def train_model(
         )
 
         if on_epoch_end is not None:
-            on_epoch_end(epoch_result)
+            should_stop = on_epoch_end(epoch_result)
+
+            if should_stop:
+                logger.info(
+                    "Training stopped by epoch callback at epoch %d",
+                    epoch + 1,
+                )
+                break
 
         logger.info(
             "Epoch %d/%d | train_loss=%.4f | validation_loss=%.4f | "
