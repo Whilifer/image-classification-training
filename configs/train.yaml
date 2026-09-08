@@ -1,4 +1,4 @@
-experiment_name: CIFAR10-classification-docker-v2
+experiment_name: CIFAR10-classification-optuna
 run_name: augmentation_flip_crop_20ep
 
 data_dir: data
