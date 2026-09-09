@@ -32,6 +32,7 @@ class AugmentationConfig:
 class TrainConfig:
     experiment_name: str
     run_name: str
+    seed: int
     data_dir: str
     batch_size: int
     epochs: int

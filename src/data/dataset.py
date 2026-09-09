@@ -61,6 +61,7 @@ def create_dataloaders(
     batch_size: int,
     num_workers: int = 0,
     augmentation: AugmentationConfig | None = None,
+    seed: int = 42,
 ):
     data_dir = Path(data_dir)
 
@@ -101,7 +102,7 @@ def create_dataloaders(
         transform=eval_transform,
     )
 
-    generator = torch.Generator().manual_seed(42)
+    generator = torch.Generator().manual_seed(seed)
 
     indices = torch.randperm(
         len(train_dataset),
@@ -134,6 +135,7 @@ def create_dataloaders(
         shuffle=True,
         num_workers=num_workers,
         pin_memory=True,
+        generator=generator,
     )
 
     validation_loader = DataLoader(

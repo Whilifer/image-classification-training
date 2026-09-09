@@ -15,6 +15,7 @@ from src.training.checkpoint import load_checkpoint
 from src.training.evaluate import collect_predictions, evaluate
 from src.training.metrics import classification_metrics
 from src.training.pipeline import EpochResult, train_model
+from src.utils.seed import set_seed
 
 
 def main():
@@ -22,6 +23,8 @@ def main():
     logger = logging.getLogger(__name__)
 
     config = TrainConfig.from_yaml("configs/train.yaml")
+
+    set_seed(config.seed)
 
     device = config.get_device()
 
@@ -34,6 +37,7 @@ def main():
         batch_size=config.batch_size,
         num_workers=config.num_workers,
         augmentation=config.augmentation,
+        seed=config.seed,
     )
 
     model = CIFARClassifier().to(device)
@@ -62,11 +66,14 @@ def main():
     mlflow.set_experiment(config.experiment_name)
 
     with mlflow.start_run(run_name=config.run_name):
+        mlflow.set_tag("run_type", "training")
+
         mlflow.log_params(
             {
                 "batch_size": config.batch_size,
                 "learning_rate": config.learning_rate,
                 "epochs": config.epochs,
+                "seed": config.seed,
                 "weight_decay": config.weight_decay,
                 "num_workers": config.num_workers,
                 "device": str(device),
