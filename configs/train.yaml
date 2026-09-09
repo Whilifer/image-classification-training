@@ -1,13 +1,15 @@
 experiment_name: CIFAR10-classification-optuna
-run_name: augmentation_flip_crop_20ep
+run_name: augmentation_flip_crop_30ep_seed42
 
 data_dir: data
 
-batch_size: 128
+batch_size: 64
 epochs: 30
-learning_rate: 0.001
-weight_decay: 0.0001
+learning_rate: 0.0011176293767909864
+weight_decay: 0.00011257133535624675
 num_workers: 0
+
+seed: 2024
 
 device: auto
 

@@ -28,21 +28,21 @@ def objective(trial: optuna.Trial) -> float:
 
         learning_rate = trial.suggest_float(
             "learning_rate",
-            1e-4,
-            3e-3,
+            1e-3,
+            2e-3,
             log=True,
         )
 
         weight_decay = trial.suggest_float(
             "weight_decay",
-            1e-6,
-            1e-3,
+            3e-5,
+            8e-4,
             log=True,
         )
 
         batch_size = trial.suggest_categorical(
             "batch_size",
-            [64, 128, 256],
+            [64, 128],
         )
 
         mlflow.log_params(
@@ -62,7 +62,7 @@ def objective(trial: optuna.Trial) -> float:
         mlflow.set_tags(
             {
                 "trial_number": str(trial.number),
-                "optuna_study": "cifar10_hyperparameter_optimization",
+                "optuna_study": "cifar10_hyperparameter_optimization_v2",
             }
         )
 
@@ -178,7 +178,7 @@ def main() -> None:
     mlflow.set_experiment(config.experiment_name)
 
     study = optuna.create_study(
-        study_name="cifar10_hyperparameter_optimization",
+        study_name="cifar10_hyperparameter_optimization_v2",
         storage="sqlite:///optuna.db",
         load_if_exists=True,
         direction="maximize",
