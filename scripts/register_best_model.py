@@ -9,7 +9,7 @@ from src.config import TrainConfig
 
 logger = logging.getLogger(__name__)
 
-EXPERIMENT_NAME = "CIFAR10-classification-docker-v2"
+# EXPERIMENT_NAME = "CIFAR10-classification-docker-v2"
 METRIC_NAME = "best_validation_accuracy"
 MODEL_NAME = "CIFARClassifier"
 MODEL_ALIAS = "champion"
@@ -23,12 +23,13 @@ def main():
 
     client = MlflowClient()
 
-    experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
+    experiment = client.get_experiment_by_name(config.experiment_name)
     if experiment is None:
-        raise RuntimeError(f"Experiment '{EXPERIMENT_NAME}' not found")
+        raise RuntimeError(f"Experiment '{config.experiment_name}' not found")
 
     runs = client.search_runs(
         experiment_ids=[experiment.experiment_id],
+        filter_string="tags.run_type = 'training'",
         order_by=[f"metrics.{METRIC_NAME} DESC"],
         max_results=1,
     )

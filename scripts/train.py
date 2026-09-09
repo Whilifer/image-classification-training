@@ -66,6 +66,8 @@ def main():
     mlflow.set_experiment(config.experiment_name)
 
     with mlflow.start_run(run_name=config.run_name):
+        mlflow.set_tag("run_type", "training")
+
         mlflow.log_params(
             {
                 "batch_size": config.batch_size,

@@ -61,6 +61,7 @@ def objective(trial: optuna.Trial) -> float:
 
         mlflow.set_tags(
             {
+                "run_type": "optuna_trial",
                 "trial_number": str(trial.number),
                 "optuna_study": "cifar10_hyperparameter_optimization_v2",
             }
@@ -189,6 +190,8 @@ def main() -> None:
     )
 
     with mlflow.start_run(run_name="optuna_hyperparameter_optimization"):
+        mlflow.set_tag("run_type", "optuna")
+
         mlflow.log_param("n_trials", 10)
         mlflow.log_param("optimization_metric", "best_validation_accuracy")
 
