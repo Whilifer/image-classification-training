@@ -44,7 +44,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest \
+          python -m pytest tests \
             --cov=app \
             --cov-report=term \
             --cov-fail-under=80
