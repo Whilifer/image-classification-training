@@ -1,0 +1,6 @@
+-r requirements.txt
+
+pandas
+scikit-learn
+matplotlib
+optuna

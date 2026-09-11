@@ -9,7 +9,7 @@ learning_rate: 0.0011176293767909864
 weight_decay: 0.00011257133535624675
 num_workers: 0
 
-seed: 2025
+seed: 2026
 
 device: auto
 
