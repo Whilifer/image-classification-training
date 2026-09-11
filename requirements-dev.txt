@@ -1,6 +1,7 @@
--r requirements-train.txt
+-r requirements.txt
 
 pytest
 pytest-cov
 ruff
 pre-commit
+httpx
