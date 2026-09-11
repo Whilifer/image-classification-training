@@ -1,4 +1,4 @@
--r requirements.txt
+-r requirements-train.txt
 
 pytest
 pytest-cov
