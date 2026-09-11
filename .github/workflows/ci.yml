@@ -79,5 +79,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/image-classification-training-inference:latest
-            ghcr.io/${{ github.repository_owner }}/image-classification-training-inference:${{ github.sha }}
+            ghcr.io/whilifer/image-classification-training-inference:latest
+            ghcr.io/whilifer/image-classification-training-inference:${{ github.sha }}
