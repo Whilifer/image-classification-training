@@ -1,8 +1,10 @@
 torch==2.13.0
 torchvision
+numpy
+pyyaml
+mlflow==3.15.1
+python-multipart
 pillow
+pydantic
 fastapi
 uvicorn
-python-multipart
-pydantic
-numpy
