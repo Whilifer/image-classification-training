@@ -32,8 +32,5 @@ services:
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
 
-    volumes:
-      - ./mlartifacts:/mlartifacts:ro
-
     depends_on:
       - mlflow
