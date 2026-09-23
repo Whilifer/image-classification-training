@@ -9,7 +9,7 @@ router = APIRouter(
 
 
 @router.get(
-    "/",
+    "",
     response_model=HealthResponse,
 )
 def health(request: Request):
