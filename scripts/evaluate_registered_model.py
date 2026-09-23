@@ -1,34 +1,43 @@
 import logging
 
 import mlflow
-import torch
+import mlflow.pytorch
 from torch import nn
 
+from logging_config import setup_logging
+from src.config import TrainConfig
 from src.data.dataset import create_dataloaders
 from src.training.evaluate import evaluate_exported_model
 
 logger = logging.getLogger(__name__)
 
-MODEL_URI = "models:/CIFARClassifier/2"
-
 
 def main():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    setup_logging()
 
-    logger.info(f"Device: {device}")
-    logger.info(f"Loading model: {MODEL_URI}")
+    config = TrainConfig.from_yaml("configs/train.yaml")
+
+    mlflow.set_tracking_uri(config.mlflow_tracking_uri)
+
+    device = config.get_device()
+
+    model_uri = "models:/CIFARClassifier@champion"
+
+    logger.info("Device: %s", device)
+    logger.info("MLflow tracking URI: %s", config.mlflow_tracking_uri)
+    logger.info("Loading registered model: %s", model_uri)
 
     model = mlflow.pytorch.load_model(
-        MODEL_URI,
+        model_uri,
         map_location=device,
     )
 
     model = model.to(device)
 
     _, _, test_loader = create_dataloaders(
-        data_dir="data",
-        batch_size=128,
-        num_workers=0,
+        data_dir=config.data_dir,
+        batch_size=config.batch_size,
+        num_workers=config.num_workers,
     )
 
     criterion = nn.CrossEntropyLoss()
@@ -41,7 +50,9 @@ def main():
     )
 
     logger.info(
-        f"Registered model | Test loss: {test_loss:.4f} | Accuracy: {test_accuracy:.4f}"
+        "Registered model | Test loss: %.4f | Accuracy: %.4f",
+        test_loss,
+        test_accuracy,
     )
 
 
